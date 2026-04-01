@@ -4,10 +4,10 @@ A React + TypeScript web application for ARVIO, reusing the same Supabase backen
 
 ## Tech Stack
 
-- **React 18** + **TypeScript**
+- **React 19** + **TypeScript**
 - **Vite** — build tool
 - **TailwindCSS** — utility-first styling
-- **React Router v6** — client-side routing
+- **React Router v7** — client-side routing
 - **@supabase/supabase-js** — Supabase client
 - **Lucide React** — icons
 

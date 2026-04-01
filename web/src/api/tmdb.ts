@@ -19,8 +19,8 @@ async function tmdbFetch<T>(path: string, params: Record<string, string> = {}): 
 
   const headers: Record<string, string> = {
     apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
   }
-  if (token) headers['Authorization'] = `Bearer ${token}`
 
   const res = await fetch(url.toString(), { headers })
   if (!res.ok) throw new Error(`TMDB proxy error: ${res.status} ${res.statusText}`)

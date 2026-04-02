@@ -67,6 +67,8 @@ export default function PlayerPage() {
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(false)
   const [volume, setVolume] = useState(1)
+  // True when the browser's autoplay policy blocked audio (need a user click to unlock)
+  const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [buffered, setBuffered] = useState(0)
@@ -157,9 +159,32 @@ export default function PlayerPage() {
       video.src = resolvedUrl
     }
 
-    video.play().catch(() => {})
+    // Reset audio-unlock banner for the new source
+    setNeedsAudioUnlock(false)
+
+    // Attempt autoplay. If the browser's autoplay policy blocks audio (NotAllowedError),
+    // or silently mutes the video, we show an "Enable Audio" banner so the user can
+    // click to unlock audio (a direct user-gesture bypasses the browser restriction).
+    const playPromise = video.play()
+    if (playPromise !== undefined) {
+      playPromise.catch((err: unknown) => {
+        const name = (err as { name?: string })?.name
+        if (name === 'NotAllowedError' || name === 'NotSupportedError') {
+          // Play was fully blocked — show banner so user can click to start
+          setNeedsAudioUnlock(true)
+        }
+      })
+    }
+
+    // Detect the Chrome "muted autoplay" case: play() resolves fine but the
+    // browser silently sets video.muted = true due to the autoplay policy.
+    const checkAutoplayMute = () => {
+      if (video.muted) setNeedsAudioUnlock(true)
+    }
+    video.addEventListener('playing', checkAutoplayMute, { once: true })
 
     return () => {
+      video.removeEventListener('playing', checkAutoplayMute)
       hlsRef.current?.destroy(); hlsRef.current = null
       video.pause(); video.src = ''
     }
@@ -302,7 +327,10 @@ export default function PlayerPage() {
   }, [])
 
   const toggleMute = useCallback(() => {
-    if (videoRef.current) videoRef.current.muted = !videoRef.current.muted
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted
+      setNeedsAudioUnlock(false)
+    }
   }, [])
 
   const toggleFullscreen = useCallback(() => {
@@ -335,6 +363,7 @@ export default function PlayerPage() {
 
   const setVolumeLevel = (v: number) => {
     if (videoRef.current) { videoRef.current.volume = v; videoRef.current.muted = v === 0 }
+    setNeedsAudioUnlock(false)
   }
 
   const setQualityLevel = (level: number) => {
@@ -396,6 +425,25 @@ export default function PlayerPage() {
         }`}
         playsInline
       />
+
+      {/* ── Autoplay audio-unlock banner ── */}
+      {needsAudioUnlock && (
+        <button
+          className="absolute top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 bg-black/85 border border-accent/50 backdrop-blur-sm rounded-full px-5 py-2.5 text-white text-sm font-semibold shadow-lg hover:bg-accent/20 transition-all"
+          onClick={(e) => {
+            e.stopPropagation()
+            const v = videoRef.current
+            if (!v) return
+            v.muted = false
+            if (v.paused) v.play().catch(() => {})
+            setNeedsAudioUnlock(false)
+          }}
+        >
+          <VolumeX className="w-4 h-4 text-accent" />
+          Click to Enable Audio
+          <Volume2 className="w-4 h-4 text-white/60" />
+        </button>
+      )}
 
       {/* ── Subtitle overlay ── */}
       {subtitleText && (

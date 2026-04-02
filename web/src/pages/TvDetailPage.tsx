@@ -139,12 +139,35 @@ export default function TvDetailPage() {
     setShowStreams(false)
     if (!show || !pendingEpisode) return
     const params = new URLSearchParams({
-      title: `${show.name} · S${pendingEpisode.season}E${pendingEpisode.episode} — ${pendingEpisode.title}`,
+      title: show.name,
       type: 'tv',
       tmdbId: String(tvId),
       season: String(pendingEpisode.season),
       episode: String(pendingEpisode.episode),
     })
+    if (imdbId) params.set('imdbId', imdbId)
+    if (show.poster_path) params.set('posterPath', show.poster_path)
+    if (pendingEpisode.title) params.set('episodeTitle', pendingEpisode.title)
+    if (stream.quality) params.set('quality', stream.quality)
+    if (stream.size) params.set('sourceSize', stream.size)
+
+    // Build next-episode link if available
+    const currentEps = seasonDetails?.episodes ?? []
+    const currentIdx = currentEps.findIndex(
+      (e) => e.season_number === pendingEpisode.season && e.episode_number === pendingEpisode.episode
+    )
+    if (currentIdx >= 0 && currentIdx + 1 < currentEps.length) {
+      const nextEp = currentEps[currentIdx + 1]
+      const nextParams = new URLSearchParams({
+        title: show.name, type: 'tv', tmdbId: String(tvId),
+        season: String(nextEp.season_number), episode: String(nextEp.episode_number),
+        episodeTitle: nextEp.name,
+      })
+      if (imdbId) nextParams.set('imdbId', imdbId)
+      if (show.poster_path) nextParams.set('posterPath', show.poster_path)
+      params.set('nextEp', `/tv/${tvId}?autoplay=${nextEp.season_number}x${nextEp.episode_number}`)
+    }
+
     if (stream.url) {
       params.set('url', stream.url)
     } else if (stream.infoHash) {
@@ -159,7 +182,7 @@ export default function TvDetailPage() {
       return
     }
     navigate(`/player?${params.toString()}`)
-  }, [show, pendingEpisode, tvId, navigate])
+  }, [show, pendingEpisode, tvId, imdbId, seasonDetails, navigate])
 
   if (loading) {
     return (

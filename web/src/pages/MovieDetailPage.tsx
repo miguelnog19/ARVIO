@@ -125,6 +125,10 @@ export default function MovieDetailPage() {
       type: 'movie',
       tmdbId: String(movieId),
     })
+    if (imdbId) params.set('imdbId', imdbId)
+    if (movie?.poster_path) params.set('posterPath', movie.poster_path)
+    if (stream.quality) params.set('quality', stream.quality)
+    if (stream.size) params.set('sourceSize', stream.size)
     if (stream.url) {
       params.set('url', stream.url)
     } else if (stream.infoHash) {
@@ -139,7 +143,7 @@ export default function MovieDetailPage() {
       return
     }
     navigate(`/player?${params.toString()}`)
-  }, [movie, movieId, navigate])
+  }, [movie, movieId, imdbId, navigate])
 
   if (loading) {
     return (

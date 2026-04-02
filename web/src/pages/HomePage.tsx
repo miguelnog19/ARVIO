@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getTrending, getPopularMovies, getTopRatedMovies, getPopularTVShows, getTopRatedTVShows } from '../api/tmdb'
 import HeroCarousel from '../components/HeroCarousel'
 import MediaRow from '../components/MediaRow'
+import ContinueWatching from '../components/ContinueWatching'
 import type { TMDBMovie, TMDBTVShow } from '../types/tmdb'
 
 export default function HomePage() {
@@ -44,6 +45,7 @@ export default function HomePage() {
         <HeroCarousel items={featured} />
       )}
       <div className="py-8">
+        <ContinueWatching />
         <MediaRow title="Trending This Week" items={trending} loading={loading} showType />
         <MediaRow title="Popular Movies" items={popularMovies} loading={loading} />
         <MediaRow title="Top Rated Movies" items={topRatedMovies} loading={loading} />

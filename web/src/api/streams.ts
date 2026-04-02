@@ -42,9 +42,30 @@ export interface AddonConfig {
 }
 
 const ADDONS_KEY = 'arvio_addons_v1'
+const ADDONS_SEEDED_KEY = 'arvio_addons_seeded_v1'
+
+const OPENSUBTITLES_ADDON: AddonConfig = {
+  id: 'opensubtitles-v3.strem.io',
+  name: 'OpenSubtitles v3',
+  url: 'https://opensubtitles-v3.strem.io',
+  enabled: true,
+  logo: 'https://opensubtitles-v3.strem.io/logo.png',
+  version: '3.0.0',
+  description: 'Search and display subtitles from OpenSubtitles',
+  types: ['movie', 'series'],
+}
 
 export function loadAddons(): AddonConfig[] {
   try {
+    // Seed OpenSubtitles on first use
+    if (!localStorage.getItem(ADDONS_SEEDED_KEY)) {
+      const existing = JSON.parse(localStorage.getItem(ADDONS_KEY) ?? '[]') as AddonConfig[]
+      const hasOs = existing.some((a) => a.id === OPENSUBTITLES_ADDON.id)
+      if (!hasOs) {
+        localStorage.setItem(ADDONS_KEY, JSON.stringify([...existing, OPENSUBTITLES_ADDON]))
+      }
+      localStorage.setItem(ADDONS_SEEDED_KEY, '1')
+    }
     const raw = localStorage.getItem(ADDONS_KEY)
     return raw ? JSON.parse(raw) : []
   } catch {
@@ -233,4 +254,72 @@ export async function fetchEpisodeStreamsAll(
       }
     })
   )
+}
+
+// ── OpenSubtitles Subtitle Fetching ────────────────────────────────────────
+
+export interface SubtitleTrack {
+  id: string
+  url: string
+  lang: string
+  label: string
+  format: string // 'vtt' | 'srt' | 'ass' etc.
+}
+
+interface StremioSubtitleResponse {
+  subtitles?: { id: string; url: string; lang: string; [k: string]: unknown }[]
+}
+
+/**
+ * Fetch subtitles for a movie from the OpenSubtitles Stremio addon.
+ * @param imdbId  e.g. "tt1234567"
+ * @param lang    optional BCP-47 language code to filter (e.g. "eng")
+ */
+export async function fetchMovieSubtitles(imdbId: string, lang?: string): Promise<SubtitleTrack[]> {
+  return fetchSubtitles(`movie/${encodeURIComponent(imdbId)}`, lang)
+}
+
+/**
+ * Fetch subtitles for a TV episode.
+ * @param imdbId  show IMDB id (e.g. "tt0944947")
+ * @param season / episode numbers
+ */
+export async function fetchEpisodeSubtitles(imdbId: string, season: number, episode: number, lang?: string): Promise<SubtitleTrack[]> {
+  return fetchSubtitles(`series/${encodeURIComponent(`${imdbId}:${season}:${episode}`)}`, lang)
+}
+
+async function fetchSubtitles(idPath: string, lang?: string): Promise<SubtitleTrack[]> {
+  const os = loadAddons().find((a) => a.id === OPENSUBTITLES_ADDON.id && a.enabled)
+  if (!os) return []
+  try {
+    const url = `${os.url}/subtitles/${idPath}.json`
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
+    if (!res.ok) return []
+    const data: StremioSubtitleResponse = await res.json()
+    const subs = data.subtitles ?? []
+    const filtered = lang ? subs.filter((s) => s.lang?.toLowerCase().startsWith(lang.toLowerCase())) : subs
+    return filtered.map((s) => ({
+      id: s.id,
+      url: s.url,
+      lang: s.lang,
+      label: langToLabel(s.lang),
+      format: (s.url?.split('.').pop() ?? 'vtt') as string,
+    }))
+  } catch {
+    return []
+  }
+}
+
+function langToLabel(lang: string): string {
+  const MAP: Record<string, string> = {
+    eng: 'English', spa: 'Spanish', por: 'Portuguese', fra: 'French',
+    deu: 'German', ita: 'Italian', jpn: 'Japanese', kor: 'Korean',
+    zho: 'Chinese', ara: 'Arabic', rus: 'Russian', nld: 'Dutch',
+    pol: 'Polish', swe: 'Swedish', nor: 'Norwegian', fin: 'Finnish',
+    dan: 'Danish', tur: 'Turkish', ron: 'Romanian', hun: 'Hungarian',
+    ces: 'Czech', slk: 'Slovak', hrv: 'Croatian', srp: 'Serbian',
+    bul: 'Bulgarian', ukr: 'Ukrainian', ell: 'Greek', heb: 'Hebrew',
+    hin: 'Hindi', tha: 'Thai', vie: 'Vietnamese', ind: 'Indonesian',
+  }
+  return MAP[lang?.toLowerCase()] ?? lang?.toUpperCase() ?? 'Unknown'
 }

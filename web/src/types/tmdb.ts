@@ -139,6 +139,20 @@ export interface TMDBEpisode {
   runtime: number | null
 }
 
+export interface TMDBExternalIds {
+  id: number
+  imdb_id: string | null
+  tvdb_id: number | null
+  wikidata_id: string | null
+  facebook_id: string | null
+  instagram_id: string | null
+  twitter_id: string | null
+}
+
+export interface TMDBSeasonDetails extends TMDBSeason {
+  episodes: TMDBEpisode[]
+}
+
 export function isMovie(item: TMDBMovie | TMDBTVShow): item is TMDBMovie {
   return (item as TMDBMovie).title !== undefined || item.media_type === 'movie'
 }

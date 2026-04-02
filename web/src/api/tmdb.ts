@@ -1,5 +1,4 @@
-import { supabase } from './supabase'
-import type { TMDBMovie, TMDBTVShow, TMDBSearchResult, TMDBMovieDetails, TMDBTVDetails, TMDBCredits, TMDBVideosResponse, TMDBEpisode } from '../types/tmdb'
+import type { TMDBMovie, TMDBTVShow, TMDBSearchResult, TMDBMovieDetails, TMDBTVDetails, TMDBCredits, TMDBVideosResponse, TMDBExternalIds, TMDBSeasonDetails } from '../types/tmdb'
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p'
 
@@ -10,9 +9,6 @@ export const getBackdropUrl = (path: string | null | undefined, size = 'w1280') 
   path ? `${TMDB_IMAGE_BASE}/${size}${path}` : null
 
 async function tmdbFetch<T>(path: string, params: Record<string, string> = {}): Promise<T> {
-  const session = await supabase.auth.getSession()
-  const token = session.data.session?.access_token
-
   const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tmdb-proxy`)
   url.searchParams.set('path', path)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
@@ -100,7 +96,15 @@ export async function searchTVShows(query: string, page = 1) {
 }
 
 export async function getTVSeason(tvId: number, seasonNumber: number) {
-  return tmdbFetch<{ episodes: TMDBEpisode[] }>(`/tv/${tvId}/season/${seasonNumber}`)
+  return tmdbFetch<TMDBSeasonDetails>(`/tv/${tvId}/season/${seasonNumber}`)
+}
+
+export async function getMovieExternalIds(id: number) {
+  return tmdbFetch<TMDBExternalIds>(`/movie/${id}/external_ids`)
+}
+
+export async function getTVExternalIds(id: number) {
+  return tmdbFetch<TMDBExternalIds>(`/tv/${id}/external_ids`)
 }
 
 export { isMovie, isTVShow, getMediaTitle, getMediaReleaseDate } from '../types/tmdb'

@@ -8,6 +8,7 @@ import MovieDetailPage from './pages/MovieDetailPage'
 import TvDetailPage from './pages/TvDetailPage'
 import WatchlistPage from './pages/WatchlistPage'
 import SettingsPage from './pages/SettingsPage'
+import PlayerPage from './pages/PlayerPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 
@@ -19,6 +20,8 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route element={<ProtectedRoute />}>
+            {/* Full-screen player — no nav chrome */}
+            <Route path="/player" element={<PlayerPage />} />
             <Route element={<Layout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/search" element={<SearchPage />} />

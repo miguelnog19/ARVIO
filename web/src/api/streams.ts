@@ -75,7 +75,11 @@ export function toggleAddon(addonId: string, enabled: boolean): void {
 
 /** Fetch manifest from a Stremio addon URL */
 export async function fetchAddonManifest(manifestUrl: string): Promise<AddonConfig> {
-  const url = manifestUrl.endsWith('/manifest.json') ? manifestUrl : `${manifestUrl.replace(/\/$/, '')}/manifest.json`
+  // Convert stremio:// deep-links to https://
+  const normalized = manifestUrl.trim().startsWith('stremio://')
+    ? 'https://' + manifestUrl.trim().slice('stremio://'.length)
+    : manifestUrl.trim()
+  const url = normalized.endsWith('/manifest.json') ? normalized : `${normalized.replace(/\/$/, '')}/manifest.json`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Failed to fetch manifest: ${res.status}`)
   const manifest = await res.json()

@@ -50,6 +50,24 @@ Note: If you mean **DTX**, ARVIO supports **DTS-family audio formats** (DTS/DTS-
 |---------|------------------------------|
 | ![Live TV](screenshots/live_tv_v184.png) | ![Catalogs](screenshots/catalogs_v13.png) |
 
+## Web App
+
+ARVIO also has a **React web app** that connects to the same Supabase backend as the Android TV app.
+
+### Setup
+
+```bash
+cd web
+cp .env.example .env.local
+# Add your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+npm install
+npm run dev
+```
+
+See [`web/README.md`](web/README.md) for full setup instructions.
+
+---
+
 ## Download
 
 ### Install from Play Store

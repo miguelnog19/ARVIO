@@ -284,6 +284,11 @@ export default function PlayerPage() {
     }, 4000)
   }, [])
 
+  // ── Sync muted state imperatively (React `muted` prop is buggy for <video>) ──
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.muted = muted
+  }, [muted])
+
   // ── Controls ───────────────────────────────────────────────────────────────
   const togglePlay = useCallback(() => {
     const v = videoRef.current
@@ -389,7 +394,6 @@ export default function PlayerPage() {
           aspectMode === 'contain' ? 'object-contain' :
           aspectMode === 'cover' ? 'object-cover' : 'object-fill'
         }`}
-        muted={muted}
         playsInline
       />
 
